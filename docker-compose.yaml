@@ -1,0 +1,66 @@
+version: '3.6'
+services:
+  apache:
+    build: ops/apache
+    container_name: app_apache
+    depends_on:
+      - php
+    ports:
+      - '80:80'
+    volumes:
+      - './ops/apache/config/vhosts:/etc/apache2/sites-enabled'
+      - './symfony:/home/wwwroot/symfony'
+
+  php:
+    build: ops/php
+    container_name: app_php
+    depends_on:
+      - mariadb
+      - maildev
+    volumes:
+      - './symfony:/home/wwwroot/symfony'
+    environment:
+      - maildev_host=sf4_maildev
+
+  node:
+    build:
+      context: ./
+      dockerfile: ./ops/node/Dockerfile
+    container_name: app_node
+    depends_on:
+      - apache
+      - mariadb
+    working_dir: /app
+    ports:
+      - '3000:8080'
+    volumes:
+      - './vue:/app'
+      - '/app/node_modules/'
+
+  mariadb:
+    image: 'mariadb:10.3'
+    container_name: app_mariadb
+    volumes:
+      - './ops/data/db:/var/lib/mysql'
+    environment:
+      - MYSQL_DATABASE=docker
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=password
+      - MYSQL_RANDOM_ROOT_PASSWORD=yes
+
+  maildev:
+    image: djfarrelly/maildev
+    container_name: app_maildev
+    ports:
+      - 8001:80
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: app_phpmyadmin
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+    ports:
+      - 8080:80
+    links:
+      - mariadb
