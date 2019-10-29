@@ -1,4 +1,4 @@
-# Vue-Symfony-Postgres-in-Docker
+# Vue-Symfony-MariaDB-in-Docker
 Clean skeleton
 
 ## 1) Installation
