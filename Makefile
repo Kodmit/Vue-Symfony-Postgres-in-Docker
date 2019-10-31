@@ -3,32 +3,28 @@ help:
 
 up: ## Creates the docker-compose stack.
 	-docker swarm init
-	docker-compose -f ops/docker-compose/docker-compose.yml --project-name project up -d
+	docker-compose up -d
 
 down: ## Deletes the docker-compose stack.  Your local environment will no longer be accessible.
-	docker-compose -f ops/docker-compose/docker-compose.yml --project-name project down
+	docker-compose down
 
 init: ## Initialise local environment
-	mkdir -p var/cache/dev var/cache/prod var/logs var/sessions
 	$(MAKE) up
 	$(MAKE) composer-install
 	$(MAKE) db-create
 	$(MAKE) db-update
-	docker cp sql/fixtures postgres:/fixtures
-	docker exec -ti db psql -d project -f /fixtures/pgsql_fixtures.sql
-	docker exec php bash -c "chmod -R 777 var/cache/dev var/cache/prod var/logs var/sessions"
 	$(MAKE) down
 
 ca-cl: ## Clears the symfony cache
-	docker exec php bash -c "php bin/console cache:clear"
+	docker exec app_php bash -c "cd symfony && php bin/console cache:clear"
 
 composer-install: ## Install symfony vendors
-	docker exec php bash -c "composer install"
+	docker exec app_php bash -c "cd symfony && composer install"
 
 db-create: ## Uses doctrine:schema:create to create database
-	docker exec php bash -c "php bin/console doctrine:database:create"
+	docker exec app_php bash -c "cd symfony && php bin/console doctrine:database:create"
 
 db-update: ## Uses doctrine:schema:update to update database
-	docker exec php -c "php bin/console doctrine:schema:update --force"
+	docker exec app_php bash -c "cd symfony && php bin/console doctrine:schema:update --force"
 
 .PHONY: up down ca-cl composer-install help
